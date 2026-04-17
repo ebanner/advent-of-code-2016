@@ -1,12 +1,9 @@
 (require '[clojure.string :as str])
 
 
-(defn parse [instruction-str]
-  (let [[turn distance-str]
-        [(first instruction-str) (subs instruction-str 1)]]
+(defmacro reduce* [[acc init x coll] & body]
+  `(reduce (fn [~acc ~x] ~@body) ~init ~coll))
 
-    (list turn
-          (parse-long distance-str))))
 
 (defn get-instructions [args]
   (->
@@ -14,6 +11,14 @@
    (str/split #",")
    (->> (map str/trim))
    (->> (map parse))))
+
+
+(defn parse [instruction-str]
+  (let [[turn distance-str]
+        [(first instruction-str) (subs instruction-str 1)]]
+
+    (list turn
+          (parse-long distance-str))))
 
 
 (defn march [[x y] distance direction]
@@ -50,13 +55,13 @@
 
 
 (defn -main [& args]
-  (let [instructions (get-instructions args)
-        state (atom {:position [0 0] :direction :N})]
+  (->
+   (reduce* [state {:position [0 0] :direction :N}
+             instruction (get-instructions args)]
 
-    (doseq [instruction instructions]
-      (swap! state #(move instruction %)))
+     (move instruction state))
 
-    (distance @state)))
+   (distance)))
 
 
 (println (-main))

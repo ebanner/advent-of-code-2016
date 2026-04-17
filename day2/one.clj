@@ -17,7 +17,7 @@
       `(reduce (fn [~acc ~x] ~@body) ~init ~coll))))
 
 
-(defn get-instruction-lines [input]
+(defn get-instruction-lines [input & _]
   (->
    (or input (slurp "input"))
    (str/split-lines)))
@@ -32,10 +32,10 @@
   (->
    n
    (max 0)
-   (min 3)))
+   (min 2)))
 
 
-(defn move [[i j] direction]
+(defn nudge [[i j] direction]
   (->>
    (case direction
      \U [(dec i) j]
@@ -45,21 +45,26 @@
    (map clamp)))
 
 
-(defn do-instructions [instructions position]
+(defn move [instructions position]
   (reduce* [position position
             instruction instructions]
 
-    (move position instruction)))
+    (nudge position instruction)))
 
 
 (defn -main [& args]
-  (def instruction-lines (get-instruction-lines (first args)))
+  (def instruction-lines (get-instruction-lines args))
 
-  (reduce* {:bathroom-code [] :position [1 1]}
-           [instructions instruction-lines]
+  (->>
+   (reduce* {:bathroom-code 0 :position [1 1]}
+     [instructions instruction-lines]
 
-    (let [position' (do-instructions instructions position)
-          digit (get-in PAD position')]
+     (let [position' (move instructions position)
+           digit (get-in PAD position')]
 
-      {:bathroom-code (conj bathroom-code digit)
-      :position position'})))
+       {:bathroom-code (+ (<< bathroom-code) digit)
+        :position position'}))
+
+   (:bathroom-code)))
+
+(println (-main))
